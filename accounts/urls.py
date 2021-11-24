@@ -5,4 +5,5 @@ urlpatterns=[
     path('users/',views.users),
     path('user/<int:user_id>',views.user_details),
     path('user/chang_password/',views.change_password),
+    path('user/login/',views.login_page),
 ]
