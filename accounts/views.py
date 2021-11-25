@@ -1,11 +1,9 @@
-from django.contrib.auth import authenticate
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view,authentication_classes,permission_classes
 from accounts.serializers import CustomUserSerializer,Change_passwordSerializer, Loginserializer
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model,authenticate
 from django.contrib.auth.hashers import make_password,check_password
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.authentication import BasicAuthentication
