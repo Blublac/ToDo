@@ -1,4 +1,4 @@
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError 
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view,authentication_classes,permission_classes
@@ -6,28 +6,20 @@ from accounts.serializers import CustomUserSerializer,Change_passwordSerializer,
 from django.contrib.auth import get_user_model,authenticate
 from django.contrib.auth.hashers import make_password,check_password
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.authentication import BasicAuthentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import BasicAuthentication, TokenAuthentication
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from django.contrib.auth.signals import user_logged_in
+
+
 
 # Create your views here.
 
 User = get_user_model()
+
 @swagger_auto_schema(methods=['POST'],request_body = CustomUserSerializer())
-@api_view(['GET','POST'])
+@api_view(['POST'])
 def users(request):
-
-    if request.method == 'GET':
-        all_users = User.objects.filter(is_active=True)
-        serializer = CustomUserSerializer(all_users,many=True)
-
-        data={
-            'message':'success',
-            'data': serializer.data
-        }
-        return Response(data,status.HTTP_200_OK)
-
-
-    elif request.method =='POST':
+     if request.method =='POST':
         serializer = CustomUserSerializer(data=request.data)
     
         if serializer.is_valid():
@@ -48,9 +40,27 @@ def users(request):
         return Response(error,status.HTTP_400_BAD_REQUEST)
     
 
+@api_view(['GET',])
+@authentication_classes([BasicAuthentication])
+@permission_classes([IsAdminUser])
+def users(request):
+    if request.method == 'GET':
+        all_users = User.objects.filter(is_active=True)
+        serializer = CustomUserSerializer(all_users,many=True)
+
+        data={
+            'message':'success',
+            'data': serializer.data
+        }
+        return Response(data,status.HTTP_200_OK)
+
+
+   
+
 
 @swagger_auto_schema(methods=['PUT','DELETE'],request_body = CustomUserSerializer())
 @api_view(['GET','PUT','DELETE',])
+@authentication_classes([IsAuthenticated])
 def user_details(request,user_id):
     try:
         user = User.objects.get(id = user_id)
@@ -143,8 +153,11 @@ def login_page(request):
 
         if login_data.is_valid():
             user = authenticate(request,username = login_data.validated_data['username'],password= login_data.validated_data['password'])
+            
             if user:
                 if user.is_active:
+                    user_logged_in.send(sender=user.__class__,
+                                        request=request, user=user)
                     serializer = CustomUserSerializer(user)
                     data = {
                         'message':'login successful',
@@ -167,3 +180,47 @@ def login_page(request):
                 'error':login_data.errors
             }
             return Response(error,status.HTTP_401_UNAUTHORIZED)
+
+
+
+
+@swagger_auto_schema(methods=['DELETE'], request_body=CustomUserSerializer())
+@api_view(['GET', 'DELETE'])
+@authentication_classes([BasicAuthentication])
+@permission_classes([IsAdminUser])
+def user_detail(request, user_id):
+    """"""
+    
+    try:
+        user = User.objects.get(id =user_id, is_active=True)
+    
+    except User.DoesNotExist:
+        data = {
+                'status'  : False,
+                'message' : "Does not exist"
+            }
+
+        return Response(data, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = CustomUserSerializer(user)
+        
+        data = {
+                'status'  : True,
+                'message' : "Successful",
+                'data' : serializer.data,
+            }
+
+        return Response(data, status=status.HTTP_200_OK)
+
+    #delete the account
+    elif request.method == 'DELETE':
+        user.is_active = False
+        user.save()
+
+        data = {
+                'status'  : True,
+                'message' : "Deleted Successfully"
+            }
+
+        return Response(data, status = status.HTTP_204_NO_CONTENT)

@@ -1,10 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+import uuid
 
 # Create your models here.class CustomUser(AbstractUser):
     
 class CustomUser(AbstractUser):
     address = models.TextField()
-    pass
-
-
+    id= models.UUIDField(primary_key=True, unique=True, editable=False,default=uuid.uuid4)
+    
