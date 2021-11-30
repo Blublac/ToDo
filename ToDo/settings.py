@@ -14,6 +14,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
+env = os.getenv('ENVIRONMENT','development')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -83,14 +84,25 @@ WSGI_APPLICATION = 'ToDo.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if env == 'development':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
 
-
+else:
+    DATABASES = {
+        'default':{
+            'ENGINE':'django.db.backends.postgrel_psycopg2',
+            'HOST':os.getenv('db_host'),
+            'NAME':os.getenv('db_name'),
+            'USER':os.getenv('db_user'),
+            'PORT':os.getenv('db_port'),
+            'PASSWORD':os.getenv('db_password'),
+        }
+    }
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
