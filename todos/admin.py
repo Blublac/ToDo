@@ -4,5 +4,5 @@ from .models import Todo
 @admin.register(Todo)
 
 class todoadmin(admin.ModelAdmin):
-    list_display=['title','body','time']
-    search_fields = ['day','title']
+    list_display=['activity','time','completed','id']
+    search_fields = ['day','activity']

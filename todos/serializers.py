@@ -7,3 +7,9 @@ class Todoserializer(serializers.ModelSerializer):
     class Meta:
         model = Todo
         fields = '__all__'
+
+
+
+
+class FutureSerializer(serializers.Serializer):
+    date = serializers.DateField()

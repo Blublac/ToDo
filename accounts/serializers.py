@@ -23,7 +23,6 @@ class Change_passwordSerializer(serializers.Serializer):
         if value != self.initial_data['re_password']:
             raise serializers.ValidationError('Please enter matching passwords')
         return value
-
         
 class Loginserializer(serializers.Serializer):
     username= serializers.CharField(max_length= 500)

@@ -11,14 +11,13 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.contrib.auth.signals import user_logged_in
 
 
-
 # Create your views here.
 
 User = get_user_model()
 
 @swagger_auto_schema(methods=['POST'],request_body = CustomUserSerializer())
 @api_view(['POST'])
-def users(request):
+def signup(request):
      if request.method =='POST':
         serializer = CustomUserSerializer(data=request.data)
     
@@ -60,17 +59,17 @@ def users(request):
 
 @swagger_auto_schema(methods=['PUT','DELETE'],request_body = CustomUserSerializer())
 @api_view(['GET','PUT','DELETE',])
-@authentication_classes([IsAuthenticated])
-def user_details(request,user_id):
+@authentication_classes([BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def user_profile(request):
     try:
-        user = User.objects.get(id = user_id)
+        user = User.objects.get(id = request.user.id,is_active =True)
     except User.DoesNotExist:
         data = {
             "message": "failed",
-            "error": f"user with id-{user_id} does not exist"
+            "error": "user with id-does not exist"
         }
         return Response(data,status.HTTP_404_NOT_FOUND)
-  
 
     if request.method =='GET':
         serializer = CustomUserSerializer(user)
@@ -184,13 +183,12 @@ def login_page(request):
 
 
 
-@swagger_auto_schema(methods=['DELETE'], request_body=CustomUserSerializer())
-@api_view(['GET', 'DELETE'])
+@swagger_auto_schema(methods=['PATCH','DELETE'], request_body=CustomUserSerializer())
+@api_view(['GET','PATCH','DELETE'])
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAdminUser])
 def user_detail(request, user_id):
-    """"""
-    
+
     try:
         user = User.objects.get(id =user_id, is_active=True)
     
@@ -212,7 +210,23 @@ def user_detail(request, user_id):
             }
 
         return Response(data, status=status.HTTP_200_OK)
-
+    elif request.method == 'PATCH':
+        serializer = CustomUserSerializer(user,data=request.data,partial = True)
+        if serializer.is_valid():
+            if 'is_staff' not in serializer.validated_data.keys():
+                raise ValidationError(message="Only status can be updated here")
+            serializer.save()
+            data = {
+                'message':'status updated',
+                'data':serializer.data
+            }
+            return Response(data,status.HTTP_202_ACCEPTED)
+        else:
+            error = {
+            'message':'failed',
+            'errors': serializer.errors
+        }
+        return Response(error,status.HTTP_400_BAD_REQUEST)
     #delete the account
     elif request.method == 'DELETE':
         user.is_active = False
@@ -224,3 +238,33 @@ def user_detail(request, user_id):
             }
 
         return Response(data, status = status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@authentication_classes([BasicAuthentication])
+@permission_classes([IsAdminUser])
+
+def nonstaff(request):
+    if request.method == 'GET':
+        all_nonstaff = User.objects.filter(is_staff = False)
+        serlizer = CustomUserSerializer(all_nonstaff,many = True)
+        data = {
+            'message': 'success',
+            'data': serlizer.data
+        }
+        return Response(data,status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@authentication_classes([BasicAuthentication])
+@permission_classes([IsAdminUser])
+
+def staff(request):
+    if request.method == 'GET':
+        all_nonstaff = User.objects.filter(is_staff = True)
+        serlizer = CustomUserSerializer(all_nonstaff,many = True)
+        data = {
+            'message': 'success',
+            'data': serlizer.data
+        }
+        return Response(data,status.HTTP_200_OK)
