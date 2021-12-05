@@ -95,7 +95,7 @@ if env == 'development':
 else:
     DATABASES = {
         'default':{
-            'ENGINE':'django.db.backends.postgrel_psycopg2',
+            'ENGINE':'django.db.backends.postgresql_psycopg2',
             'HOST':os.getenv('db_host'),
             'NAME':os.getenv('db_name'),
             'USER':os.getenv('db_user'),
